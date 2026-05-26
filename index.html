@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Me Time</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background-color: #F9F6F0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .morandi-card {
+            background-color: #FFFFFF;
+            border-radius: 24px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-4">
+
+    <div class="w-full max-w-md morandi-card p-6 flex flex-col justify-between min-h-[85vh] relative overflow-hidden">
+        
+        <div id="page1" class="space-y-6">
+            <div class="flex justify-between items-center border-b pb-4 border-stone-200">
+                <h1 class="text-2xl font-bold text-stone-800 tracking-wide">Me Time</h1>
+                <span class="text-xs text-stone-500 bg-stone-100 px-3 py-1 rounded-full font-medium" id="currentDate1">DATE: 202X.XX.XX</span>
+            </div>
+
+            <div id="notificationBanner" class="bg-amber-50 border border-amber-200 p-3 rounded-xl text-xs text-amber-800 flex justify-between items-center hidden">
+                <span>允許網頁通知，手機後台計時結束才會響喔！</span>
+                <button onclick="requestNotificationPermission()" class="bg-amber-600 text-white px-3 py-1 rounded-lg font-bold">開啟通知</button>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-base font-bold text-stone-700 flex items-center gap-2">1. 今日身心狀態</h3>
+                
+                <div class="bg-stone-50 p-3 rounded-xl flex justify-between items-center">
+                    <span class="text-sm text-stone-600 font-medium">壓力值 (請點擊)</span>
+                    <div class="flex gap-1 text-xl cursor-pointer" id="stressStars">
+                        <span onclick="setStress(1)">☆</span><span onclick="setStress(2)">☆</span><span onclick="setStress(3)">☆</span><span onclick="setStress(4)">☆</span><span onclick="setStress(5)">☆</span>
+                    </div>
+                </div>
+
+                <div class="bg-stone-50 p-3 rounded-xl space-y-2">
+                    <div class="flex justify-between items-center text-sm text-stone-600 font-medium">
+                        <span>今日體力電量</span>
+                        <span id="batteryVal" class="text-amber-600 font-bold">50%</span>
+                    </div>
+                    <input type="range" min="0" max="100" value="50" class="w-full accent-amber-500 h-1 bg-stone-200 rounded-lg appearance-none cursor-pointer" id="batterySlider" oninput="updateBattery(this.value)">
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-sm text-stone-600 font-medium block">今日心情 (可複選)</span>
+                    <div class="grid grid-cols-3 gap-2 text-xs">
+                        <button onclick="toggleMood(this, '🙂 正常')" class="mood-btn py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 font-medium">🙂 正常</button>
+                        <button onclick="toggleMood(this, '🥳 開心')" class="mood-btn py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 font-medium">🥳 開心</button>
+                        <button onclick="toggleMood(this, '😢 難過')" class="mood-btn py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 font-medium">😢 難過</button>
+                        <button onclick="toggleMood(this, '😞 失望')" class="mood-btn py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 font-medium">😞 失望</button>
+                        <button onclick="toggleMood(this, '🤯 煩躁')" class="mood-btn py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 font-medium">🤯 煩躁</button>
+                        <input type="text" id="otherMood" placeholder="✏️ 其他..." class="p-2 rounded-xl border border-stone-200 text-stone-600 text-center bg-transparent focus:outline-none focus:border-stone-400">
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h3 class="text-base font-bold text-stone-700">2. 今日讀書任務</h3>
+                <div class="space-y-2">
+                    <input type="text" placeholder="✍️ 01" class="w-full p-3 rounded-xl border border-stone-200 bg-stone-50/50 text-sm focus:outline-none focus:border-stone-400" id="task1">
+                    <input type="text" placeholder="✍️ 02" class="w-full p-3 rounded-xl border border-stone-200 bg-stone-50/50 text-sm focus:outline-none focus:border-stone-400" id="task2">
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-base font-bold text-stone-700">3. 充電時間預約</h3>
+                <div class="bg-stone-50 p-3 rounded-xl space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input type="number" placeholder="請輸入" class="w-20 p-2 rounded-lg border border-stone-200 bg-white text-center font-bold text-stone-700 focus:outline-none" id="chargeMinutes">
+                        <span class="text-sm font-medium text-stone-600">分鐘</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h3 class="text-base font-bold text-stone-700">4. 應援點單 (可複選)</h3>
+                <div class="space-y-2 text-sm text-stone-600">
+                    <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-stone-50 cursor-pointer">
+                        <input type="checkbox" id="support1" class="w-4 h-4 accent-red-500"> <span>🔴 請勿打擾</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-stone-50 cursor-pointer">
+                        <input type="checkbox" id="support2" class="w-4 h-4 accent-amber-500"> <span>🟡 食物補給</span>
+                    </label>
+                    <div class="p-2 rounded-lg bg-stone-50 space-y-2">
+                        <label class="flex items-center gap-3 cursor-pointer font-medium">
+                            <input type="checkbox" class="w-4 h-4 accent-green-600" id="spiritualSupport" onchange="toggleSubOptions(this.checked)"> <span>🟢 精神應援</span>
+                        </label>
+                        <div id="subOptions" class="pl-7 space-y-1 hidden text-xs text-stone-500">
+                            <label class="flex items-center gap-2 py-1 cursor-pointer"><input type="checkbox" id="subSupport1"> 需要鼓勵 (單純幫我加油就好~)</label>
+                            <label class="flex items-center gap-2 py-1 cursor-pointer"><input type="checkbox" id="subSupport2"> 我想聊聊 (今晚想找你們說說話)</label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-2 rounded-lg">
+                        <span class="text-stone-500 text-xs shrink-0">🔵 其他：</span>
+                        <input type="text" id="supportOther" placeholder="自由輸入欄位..." class="w-full bg-transparent border-b border-stone-200 focus:outline-none text-xs pb-0.5">
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <span class="text-xs font-semibold text-stone-400 block tracking-wider">MEMO</span>
+                <textarea id="memo1" placeholder="寫下今天想記下來的事..." class="w-full h-16 p-3 rounded-xl border border-stone-200 text-xs bg-stone-50/30 focus:outline-none resize-none"></textarea>
+            </div>
+
+            <button onclick="submitApplication()" class="w-full py-4 bg-stone-800 text-white rounded-xl font-bold tracking-widest text-sm shadow-md hover:bg-stone-700 transition cursor-pointer">
+                確認送出，開始 Me Time →
+            </button>
+        </div>
+
+        <div id="page2" class="space-y-8 hidden py-6">
+            <div class="text-center space-y-2">
+                <h1 id="page2Title" class="text-xl font-bold text-stone-800 tracking-wide">⚡ 純充電模式</h1>
+                <p id="page2Sub" class="text-xs text-stone-400 font-medium">這是完全屬於你的自由調適時間</p>
+            </div>
+
+            <div class="flex justify-center items-center py-6">
+                <div class="w-52 h-52 rounded-full border-4 border-stone-100 bg-stone-50/50 flex flex-col justify-center items-center shadow-inner relative">
+                    <span id="timerDisplay" class="text-5xl font-light text-stone-800 tracking-tighter">00:00</span>
+                    <span id="timerStatus" class="text-[10px] uppercase tracking-widest text-stone-400 font-bold mt-2">Me Time Counting</span>
+                </div>
+            </div>
+
+            <div id="pomodoroControls" class="bg-white p-4 rounded-2xl border border-stone-200 hidden space-y-4 shadow-sm">
+                <span class="text-xs font-bold text-stone-600 block text-center">🎯 自主設定讀書時間 (可重複無限續航)</span>
+                <div class="flex gap-2 justify-center items-center">
+                    <input type="number" id="pomoInput" value="25" class="w-16 p-2 border border-stone-200 rounded-xl text-center font-bold text-stone-700 focus:outline-none focus:border-stone-400">
+                    <span class="text-xs text-stone-500 font-medium">分鐘</span>
+                    <button onclick="startPomodoro()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-500 transition cursor-pointer">啟動專注番茄鐘</button>
+                </div>
+            </div>
+
+            <div class="text-center pt-4 border-t border-stone-100">
+                <p class="text-xs text-stone-400 font-medium italic">「充電後，我會更有動力！」</p>
+            </div>
+
+            <div id="page2Buttons" class="space-y-2 pt-2 hidden">
+                <button id="pomoTriggerBtn" onclick="enablePomodoroMode()" class="w-full py-3 bg-stone-100 text-stone-700 rounded-xl font-bold text-xs tracking-wider border border-stone-200 hover:bg-stone-200 transition cursor-pointer">
+                    🔋 充飽電了！主動切換至「正向自律番茄鐘」
+                </button>
+                <button onclick="goToPage3()" class="w-full py-4 bg-stone-800 text-white rounded-xl font-bold tracking-widest text-sm shadow-md hover:bg-stone-700 transition cursor-pointer">
+                    進入睡前檢視 →
+                </button>
+            </div>
+        </div>
+
+        <div id="page3" class="space-y-6 hidden">
+            <div class="flex justify-between items-center border-b pb-4 border-stone-200">
+                <h1 class="text-2xl font-bold text-stone-800 tracking-wide">5. 睡前檢視</h1>
+                <span class="text-xs text-stone-500 bg-stone-100 px-3 py-1 rounded-full font-medium" id="currentDate2">DATE: 202X.XX.XX</span>
+            </div>
+
+            <div class="space-y-3">
+                <h3 class="text-base font-bold text-stone-700">● 今日讀書任務確認</h3>
+                <div class="space-y-3">
+                    <label class="p-4 rounded-xl border border-stone-200 block bg-stone-50/30 hover:bg-stone-50 cursor-pointer transition" id="lbl_review1">
+                        <div class="flex items-start gap-3">
+                            <input type="radio" name="finalReview" value="按照計畫執行" class="mt-1 accent-stone-700" onclick="selectReviewOpt(1)">
+                            <div class="text-sm">
+                                <span class="font-bold text-stone-700 block">🔄 按照計畫執行</span>
+                                <span class="text-xs text-stone-500 mt-0.5 block">我今天充電後，有順利去執行自派的讀書任務。</span>
+                            </div>
+                        </div>
+                    </label>
+
+                    <label class="p-4 rounded-xl border border-stone-200 block bg-stone-50/30 hover:bg-stone-50 cursor-pointer transition" id="lbl_review2">
+                        <div class="flex items-start gap-3">
+                            <input type="radio" name="finalReview" value="休息" class="mt-1 accent-stone-700" onclick="selectReviewOpt(2)">
+                            <div class="text-sm">
+                                <span class="font-bold text-stone-700 block">💤 休息</span>
+                                <span class="text-xs text-stone-500 mt-0.5 block">我決定今天先睡覺修復，明天再加油。</span>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <span class="text-sm font-bold text-stone-700 block">💬 自由書寫空間</span>
+                <textarea placeholder="寫下今晚的心情反思、或者跟自己對話..." class="w-full h-36 p-3 rounded-xl border border-stone-200 text-xs bg-stone-50/30 focus:outline-none resize-none" id="finalMemo"></textarea>
+            </div>
+
+            <button onclick="finishDay()" class="w-full py-4 bg-stone-800 text-white rounded-xl font-bold tracking-widest text-sm shadow-md hover:bg-stone-700 transition cursor-pointer">
+                儲存大腦能量 management 檔案 ✓
+            </button>
+        </div>
+
+    </div>
+
+    <script type="module">
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('Service Worker 註冊成功，範圍為:', reg.scope))
+      .catch(err => console.log('註冊失敗:', err));
+  });
+}
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+       const firebaseConfig = {
+  apiKey: "AIzaSyCK7Emih_sQPxGwGrbwudrxtsQXaD3jQvM",
+  authDomain: "newmetime-e7cc1.firebaseapp.com",
+  databaseURL: "https://newmetime-e7cc1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "newmetime-e7cc1",
+  storageBucket: "newmetime-e7cc1.firebasestorage.app",
+  messagingSenderId: "398857003897",
+  appId: "1:398857003897:web:4cb6359c122ba801b945a8",
+  measurementId: "G-ZQMJQG5VGX"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dataRef = ref(db, "me_time_data/current_status");
+
+        const today = new Date();
+        const dateStr = `DATE: ${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+        document.getElementById('currentDate1').innerText = dateStr;
+        document.getElementById('currentDate2').innerText = dateStr;
+
+        let countdownInterval;
+        let selectedStress = 0;
+        let selectedMoods = [];
+
+        window.addEventListener('load', () => {
+            if ('Notification' in window) {
+                if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    document.getElementById('notificationBanner').classList.remove('hidden');
+                }
+            }
+        });
+
+        window.requestNotificationPermission = function() {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    document.getElementById('notificationBanner').classList.add('hidden');
+                    alert("🎉 通知權限已開啟！現在你可以放心去滑別的 App 了。");
+                }
+            });
+        };
+
+        window.sendPushNotification = function(titleText, bodyText) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(titleText, {
+                    body: bodyText,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/3106/3106775.png'
+                });
+            }
+        };
+
+        window.playBeepSound = function() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let osc1 = audioCtx.createOscillator();
+                let gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gain1.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(); osc1.stop(audioCtx.currentTime + 0.4);
+            } catch (e) { console.log(e); }
+        };
+
+        onValue(dataRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) { window.renderFromCloud(data); }
+        });
+
+        window.setStress = function(rating) {
+            selectedStress = rating;
+            const stars = document.getElementById('stressStars').children;
+            for (let i = 0; i < 5; i++) {
+                stars[i].innerText = i < rating ? '★' : '☆';
+                stars[i].className = i < rating ? 'text-amber-500 font-bold' : 'text-stone-300';
+            }
+        };
+
+        window.updateBattery = function(val) {
+            document.getElementById('batteryVal').innerText = val + '%';
+        };
+
+        window.toggleMood = function(btn, moodText) {
+            btn.classList.toggle('bg-stone-800'); btn.classList.toggle('text-white'); btn.classList.toggle('border-stone-800');
+            if (selectedMoods.includes(moodText)) { selectedMoods = selectedMoods.filter(m => m !== moodText); } 
+            else { selectedMoods.push(moodText); }
+        };
+
+        window.toggleSubOptions = function(checked) {
+            const sub = document.getElementById('subOptions');
+            if (checked) sub.classList.remove('hidden'); else sub.classList.add('hidden');
+        };
+
+        window.selectReviewOpt = function(idx) {
+            document.getElementById('lbl_review1').classList.remove('border-stone-800', 'bg-stone-50/50');
+            document.getElementById('lbl_review2').classList.remove('border-stone-800', 'bg-stone-50/50');
+            document.getElementById(`lbl_review${idx}`).classList.add('border-stone-800', 'bg-stone-50/50');
+        };
+
+        window.renderFromCloud = function(data) {
+            window.setStress(data.stress);
+            document.getElementById('batterySlider').value = data.battery;
+            document.getElementById('batteryVal').innerText = data.battery + '%';
+            document.getElementById('task1').value = data.task1;
+            document.getElementById('task2').value = data.task2;
+            document.getElementById('chargeMinutes').value = data.chargeMinutes;
+            document.getElementById('support1').checked = data.support1;
+            document.getElementById('support2').checked = data.support2;
+            document.getElementById('spiritualSupport').checked = data.spiritualSupport;
+            window.toggleSubOptions(data.spiritualSupport);
+            document.getElementById('subSupport1').checked = data.subSupport1;
+            document.getElementById('subSupport2').checked = data.subSupport2;
+            document.getElementById('supportOther').value = data.supportOther;
+            document.getElementById('memo1').value = data.memo1;
+        };
+
+        window.submitApplication = function() {
+            let mins = parseInt(document.getElementById('chargeMinutes').value);
+            if (isNaN(mins) || mins <= 0) mins = 30;
+
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+
+            const payload = {
+                stress: selectedStress,
+                battery: document.getElementById('batterySlider').value,
+                moods: selectedMoods,
+                otherMood: document.getElementById('otherMood').value,
+                task1: document.getElementById('task1').value,
+                task2: document.getElementById('task2').value,
+                chargeMinutes: mins,
+                support1: document.getElementById('support1').checked,
+                support2: document.getElementById('support2').checked,
+                spiritualSupport: document.getElementById('spiritualSupport').checked,
+                subSupport1: document.getElementById('subSupport1').checked,
+                subSupport2: document.getElementById('subSupport2').checked,
+                supportOther: document.getElementById('supportOther').value,
+                memo1: document.getElementById('memo1').value,
+                timestamp: new Date().getTime()
+            };
+
+            set(dataRef, payload).then(() => {
+                window.goToPage2(mins);
+            }).catch(err => alert("同步失敗：" + err));
+        };
+
+        window.goToPage2 = function(mins) {
+            document.getElementById('page1').classList.add('hidden');
+            document.getElementById('page2').classList.remove('hidden');
+            
+            // 🌟 核心修正：進去 Page 2 時，下方的按鈕區域必須是完全隱藏的
+            document.getElementById('page2Buttons').classList.add('hidden');
+            document.getElementById('pomoTriggerBtn').classList.remove('hidden'); 
+            document.getElementById('pomodoroControls').classList.add('hidden');
+            document.getElementById('page2Title').innerText = "⚡ 純充電模式";
+            document.getElementById('page2Sub').innerText = "這是完全屬於你的自由調適時間";
+
+            window.startTimer(mins * 60, () => {
+                document.getElementById('timerStatus').innerText = "🔋 充電已完成！";
+                
+                // 🌟 計時完成後，才把按鈕區域顯示出來！
+                document.getElementById('page2Buttons').classList.remove('hidden');
+                
+                window.playBeepSound();
+                window.sendPushNotification("⚡ Me Time 充電完成！", "你的大腦電量已充飽，快回網頁開啟專注模式吧！");
+                
+                alert("⏰ Me Time 充電時間已完成！");
+            });
+        };
+
+        window.startTimer = function(duration, callback) {
+            clearInterval(countdownInterval);
+            let timer = duration, minutes, seconds;
+            const display = document.getElementById('timerDisplay');
+
+            countdownInterval = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+                display.textContent = minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(countdownInterval);
+                    if (callback) callback();
+                }
+            }, 1000);
+        };
+
+        window.enablePomodoroMode = function() {
+            document.getElementById('page2Title').innerText = "🎯 自律專注模式";
+            document.getElementById('page2Sub').innerText = "正在執行你派給自己的讀書任務...";
+            document.getElementById('pomodoroControls').classList.remove('hidden');
+            document.getElementById('pomoTriggerBtn').classList.add('hidden');
+            document.getElementById('timerDisplay').textContent = "25:00";
+            document.getElementById('timerStatus').innerText = "Focusing";
+        };
+
+        window.startPomodoro = function() {
+            let mins = parseInt(document.getElementById('pomoInput').value);
+            if (isNaN(mins) || mins <= 0) mins = 25;
+            
+            document.getElementById('timerStatus').innerText = "專注中 🔥";
+            window.startTimer(mins * 60, () => {
+                document.getElementById('timerStatus').innerText = "✨ 這個段落完成了！";
+                window.playBeepSound();
+                window.sendPushNotification("🎯 專注時間結束！", "太棒了！你完成了一個番茄鐘，休息一下吧。");
+                alert("太棒了！你設定的專注時間已完成。");
+            });
+        };
+
+        window.goToPage3 = function() {
+            clearInterval(countdownInterval);
+            document.getElementById('page2').classList.add('hidden');
+            document.getElementById('page3').classList.remove('hidden');
+        };
+
+        window.finishDay = function() {
+            const options = document.getElementsByName('finalReview');
+            let selected = false; let reviewValue = "";
+            for (const opt of options) { if (opt.checked) { selected = true; reviewValue = opt.value; } }
+            if (!selected) { alert("請誠實勾選你今天的步調確認喔！"); return; }
+
+            set(ref(db, "me_time_data/final_review"), {
+                review: reviewValue,
+                memo: document.getElementById('finalMemo').value,
+                timestamp: new Date().getTime()
+            }).then(() => { alert("✓ 今天的能量管理檔案已儲存到雲端！辛苦了！"); });
+        };
+    </script>
+</body>
+</html>
